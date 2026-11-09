@@ -1,8 +1,8 @@
 # Demo script — target 2:35 (must remain under 3:00)
 
-Not recorded. Qwen2.5-3B was rehearsed on 7 Nov 2026 with PayPal in MOCK. Record a sandbox video only after a real PayPal sandbox call has been verified. Mock footage cannot stand in for sandbox evidence. No music, no unpermitted logos or third-party marks. Watch the footage for secrets and personal data.
+Not recorded. Qwen2.5-3B was rehearsed on 7 Nov 2026 with PayPal in MOCK. Invoice create, send, and status GET were verified on the PayPal sandbox on 9 Nov 2026 at 23:14 UK (invoice `INV2-SN87-YHFB-FLLW-TYW3`, status `SENT`; see `docs/SANDBOX_VERIFICATION.md`). A sandbox recording of that flow has to show the PayPal invoice id. Mock footage cannot stand in for sandbox evidence. Payment Links, capture/refund, live mode, and the LLM intent provider are not verified. No music, no unpermitted logos or third-party marks. Watch the footage for secrets and personal data.
 
-`make demo` is always MOCK and always uses the deterministic parser. On 7 Nov 2026 the same flow was also rehearsed with Qwen2.5-3B (`qwen2.5:3b`) via Ollama, still with `PAYPILOT_PAYPAL_MODE=mock`. No real sandbox call has been verified. Do not describe payment links or capture refunds as sandbox successes. The recording itself, when it is made, has to show ids returned by PayPal before any sandbox claim.
+`make demo` is always MOCK and always uses the deterministic parser. On 7 Nov 2026 the same flow was also rehearsed with Qwen2.5-3B (`qwen2.5:3b`) via Ollama, still with `PAYPILOT_PAYPAL_MODE=mock`. The 9 Nov 2026 sandbox run verified invoice create, send, and status GET only, and its intent parser was mock. Do not describe payment links or capture refunds as sandbox successes. The recording itself, when it is made, has to show ids returned by PayPal before any sandbox claim.
 
 0:00–0:15: “Freelancers should not have to switch tools to invoice clients and track payments. PayPilot turns a request into a reviewable PayPal action.” Show the mode banner that is actually on screen. A MOCK rehearsal must say MOCK. A SANDBOX banner belongs only in a recording made after a verified sandbox call.
 

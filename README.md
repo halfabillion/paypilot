@@ -4,11 +4,29 @@ PayPilot is a bookkeeping assistant for freelancers. You describe an invoice, a 
 
 The default mode is **MOCK**: fully offline, with fixtures whose ids and links are labeled as mock. **SANDBOX** mode is a separate setting, `PAYPILOT_PAYPAL_MODE=sandbox`, which calls `https://api-m.sandbox.paypal.com` when `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET` are present in the process environment. MOCK is not PayPal sandbox and it is not live PayPal. Production and live payments are out of scope.
 
-Verification status: tests run against a mock PayPal client and do not call PayPal. Live Sandbox mode exists (`PAYPILOT_PAYPAL_MODE=sandbox` with `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET`) and is written to call `https://api-m.sandbox.paypal.com`, but that mode is not yet verified. Local Qwen2.5-3B (`qwen2.5:3b`) via Ollama was checked on 7 November 2026, and those PayPal responses were MOCK fixtures. MOCK is not PayPal sandbox or live PayPal. Production and live payments are out of scope. Payment Links remains capability-unverified.
+Mock tests are separate from the sandbox run. This public release was checked with `python3 -m pytest`: **74 passed**, against a mock PayPal client. Those tests do not call PayPal. Local Qwen2.5-3B (`qwen2.5:3b`) via Ollama was checked on 7 November 2026, and those PayPal responses were MOCK fixtures. MOCK is not PayPal sandbox and it is not live PayPal. Production and live payments are out of scope.
+
+Hosted demo: [MOCK mode demo (offline fixtures, not PayPal)](https://paypilot-ozt7.onrender.com)
 
 Public repository: https://github.com/halfabillion/paypilot
 
 Entrant: Ali Ghaedi. Solo hackathon project for the [PayPal AI Hackathon](https://paypalaihackathon.devpost.com). Deadline Thursday 12 November 2026, 20:00 UK.
+
+## Sandbox verification
+
+On 9 Nov 2026 at 23:14 UK, with `PAYPILOT_PAYPAL_MODE=sandbox` against `https://api-m.sandbox.paypal.com`, this flow succeeded through the PayPilot app API, with human confirmation before each write:
+
+| Step | Endpoint | Result |
+|---|---|---|
+| Create invoice | `POST /v2/invoicing/invoices` | PayPal 201. Invoice `INV2-SN87-YHFB-FLLW-TYW3`. |
+| Send | `POST /v2/invoicing/invoices/INV2-SN87-YHFB-FLLW-TYW3/send` | PayPal 200. Status `SENT`. |
+| Status GET | `GET /v2/invoicing/invoices/INV2-SN87-YHFB-FLLW-TYW3` | PayPal 200. Status `SENT`. |
+
+The intent parser ran in mock mode (no LLM key), so only the PayPal side is verified live-sandbox.
+
+Not verified: Payment Links, capture/refund, live mode, and the LLM intent provider. Invoice list and recording a refund were not part of this run.
+
+Redacted evidence: `docs/SANDBOX_VERIFICATION.md`. No client id, secret, or bearer token is in that file.
 
 ## Setup
 
@@ -64,13 +82,13 @@ PayPal is the ledger. The assistant cannot invent an invoice id, a paid status, 
 | Action | Method and path | Notes |
 |---|---|---|
 | OAuth | `POST /v1/oauth2/token` | Client credentials. Token reused until 60 seconds before expiry. Refresh stops after repeated failures. |
-| Create draft | `POST /v2/invoicing/invoices` | Does not email the buyer. |
-| Send | `POST /v2/invoicing/invoices/{id}/send` | Separate confirm. A sent invoice is unpaid until a later GET says otherwise. |
-| Get | `GET /v2/invoicing/invoices/{id}` | Authoritative status. |
-| List | `GET /v2/invoicing/invoices` | In sandbox, each id this session created is then read with GET. |
+| Create draft | `POST /v2/invoicing/invoices` | Does not email the buyer. Verified on the sandbox on 9 Nov 2026: PayPal 201, invoice `INV2-SN87-YHFB-FLLW-TYW3`. |
+| Send | `POST /v2/invoicing/invoices/{id}/send` | Separate confirm. Verified on that invoice: PayPal 200, status `SENT`. A sent invoice is unpaid until a later GET says otherwise. |
+| Get | `GET /v2/invoicing/invoices/{id}` | Authoritative status. Verified on that invoice: PayPal 200, status `SENT`. |
+| List | `GET /v2/invoicing/invoices` | In sandbox, each id this session created is then read with GET. Not verified on the 9 Nov 2026 sandbox run. |
 | Payment link | `POST /v1/checkout/payment-resources` | Client sends `integration_mode: LINK` and `type: BUY_NOW`. Reusable links send `reusable: MULTIPLE`. A one-time link omits `reusable`. Not verified against the PayPal sandbox. |
 | Refund a capture | `POST /v2/payments/captures/{id}/refund` | Client builds a capture-refund request. Not verified against the PayPal sandbox. |
-| Record a refund | `POST /v2/invoicing/invoices/{id}/refunds` | Bookkeeping. It does not transfer money. |
+| Record a refund | `POST /v2/invoicing/invoices/{id}/refunds` | Bookkeeping. It does not transfer money. Not verified against the PayPal sandbox. |
 
 Docs used while writing the client: [authentication](https://developer.paypal.com/api/rest/authentication/), [Invoicing v2](https://developer.paypal.com/docs/api/invoicing/v2/), [invoicing quick start](https://developer.paypal.com/api/invoicing), [record refund](https://developer.paypal.com/api/invoicing/v2/invoices-refunds), [payment links](https://developer.paypal.com/api/payment-links-buttons), [capture refund](https://developer.paypal.com/docs/api/payments/v2/).
 
@@ -89,7 +107,7 @@ Do not commit `.env`. Do not paste the secret into the README, the activity scre
 
 Recording an external refund is a different action from refunding a capture. It does not transfer money. PayPilot will not substitute one for the other. Neither capture refunds nor payment links have been shown to succeed on the sandbox.
 
-No real sandbox call has been verified. The sandbox client is covered by tests that stub HTTP and check the request shape, OAuth, idempotency, 401, 422, token reuse, and the refresh cap.
+The live-sandbox evidence is the 9 Nov 2026 invoice create, send, and status GET in [Sandbox verification](#sandbox-verification). The sandbox client is also covered by tests that stub HTTP and check the request shape, OAuth, idempotency, 401, 422, token reuse, and the refresh cap. Those tests do not call PayPal. Payment Links, capture/refund, recorded refund, invoice list, live mode, and the LLM intent provider remain unverified.
 
 ## How AI is used
 
@@ -181,7 +199,7 @@ PAYPAL_BASE_URL=https://api-m.sandbox.paypal.com
 make serve
 ```
 
-Missing credentials refuse to start. No real sandbox call has been verified in this project. Do not treat payment-link or capture-refund behavior as sandbox-proven. Invoice create, send, get, and list are the calls to exercise first, and even those still need your own sandbox check.
+Missing credentials refuse to start. One sandbox run, on 9 Nov 2026 at 23:14 UK, verified invoice create (PayPal 201, `INV2-SN87-YHFB-FLLW-TYW3`), send (200, `SENT`), and status GET (200, `SENT`) through the PayPilot app API. See [Sandbox verification](#sandbox-verification). Payment Links, capture/refund, live mode, and the LLM intent provider are not verified. Invoice list was not part of that run. Repeating the flow needs your own sandbox credentials.
 
 ## Judging criteria
 
@@ -189,8 +207,8 @@ Stage 1 is pass/fail on theme and required PayPal use. Stage 2 weights implement
 
 | Criterion | What this repo shows | Still open |
 |---|---|---|
-| Theme and PayPal | Every money action is a named PayPal REST call behind one gateway. The UI is the review step and the activity feed. MOCK fixtures are not PayPal sandbox results. | A verified PayPal sandbox call with a real REST app. |
-| Technological implementation | Decimal checks, confirm-before-write, idempotency keys, bounded token refresh, 401/422 messages, session isolation in mock, redacted logs, offline tests. Qwen2.5-3B via Ollama was rehearsed on 7 Nov 2026 with PayPal in MOCK. | A verified call to the PayPal sandbox. |
+| Theme and PayPal | Every money action is a named PayPal REST call behind one gateway. The UI is the review step and the activity feed. On 9 Nov 2026 at 23:14 UK, sandbox create, send, and status GET succeeded for invoice `INV2-SN87-YHFB-FLLW-TYW3`. MOCK fixtures are not that result. | Payment Links, capture/refund, live mode, and the LLM intent provider are unverified. |
+| Technological implementation | Decimal checks, confirm-before-write, idempotency keys, bounded token refresh, 401/422 messages, session isolation in mock, redacted logs, offline tests. The 9 Nov 2026 sandbox run used the mock intent parser. Qwen2.5-3B via Ollama was rehearsed on 7 Nov 2026 with PayPal in MOCK. | LLM intent against sandbox PayPal is unverified. Payment Links and capture/refund are unverified. |
 | Design | Mode banner, proposal preview with the exact path, separate send, capture refund labeled apart from a recorded refund, empty activity until a call exists. | A recording of the real UI. |
 | Potential impact | One freelancer path: draft, send, read status, share a link, refund or record a refund, without the assistant moving money on its own. | No measured time or money savings are claimed. |
 | Innovation | The model proposes fields. PayPal's response is the money state. Ungrounded ids are dropped. | Not positioned against other hackathon entries. |
@@ -208,4 +226,4 @@ MIT. See `LICENSE`. Runtime dependencies (FastAPI, Starlette, Uvicorn, HTTPX, Py
 
 ## Tests
 
-`make test` is the suite. It runs against a mock PayPal client and does not call PayPal. Live Sandbox mode exists (`PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET`), and it is not yet verified. This public release was checked with `python3 -m pytest`: **74 passed**. `make demo` ends in `DEMO PASS`, stays on MOCK, and uses the deterministic parser.
+`make test` is the suite. It runs against a mock PayPal client and does not call PayPal. This public release was checked with `python3 -m pytest`: **74 passed**. That count is the mock-client suite, separate from the 9 Nov 2026 sandbox run in [Sandbox verification](#sandbox-verification). `make demo` ends in `DEMO PASS`, stays on MOCK, and uses the deterministic parser.
