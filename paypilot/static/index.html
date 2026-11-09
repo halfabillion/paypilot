@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>PayPilot</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <span class="mark" aria-hidden="true">Pp</span>
+      <div>
+        <p class="eyebrow">Freelancer bookkeeping</p>
+        <h1>PayPilot</h1>
+      </div>
+    </div>
+    <p class="tagline">A request becomes a proposal. PayPal runs after you confirm.</p>
+    <button type="button" id="new-session" class="text-button">New session</button>
+  </header>
+  <div id="banner" class="banner" role="status"></div>
+  <main>
+    <section class="chat" aria-label="Conversation">
+      <div id="transcript" class="transcript" aria-live="polite"></div>
+      <form id="composer">
+        <label for="message">Request</label>
+        <textarea id="message" rows="3" maxlength="2000" placeholder="Invoice buyer@example.com, Northwind Studio, £250 for website work"></textarea>
+        <div id="suggestions" class="suggestions"></div>
+        <div class="composer-row">
+          <p id="form-error" class="form-error" role="alert" hidden></p>
+          <button type="submit" id="send">Draft proposal</button>
+        </div>
+      </form>
+    </section>
+    <aside class="feed" aria-label="PayPal activity">
+      <div class="feed-head">
+        <h2>PayPal activity</h2>
+        <p>Each row is a gateway call. Mock rows are fixtures.</p>
+      </div>
+      <ol id="activity"></ol>
+    </aside>
+  </main>
+  <footer>
+    <p id="disclosure"></p>
+    <p id="provider"></p>
+  </footer>
+  <script src="/static/app.js"></script>
+</body>
+</html>
