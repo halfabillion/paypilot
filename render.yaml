@@ -1,0 +1,29 @@
+# Render Blueprint for a free Web Service demo of PayPilot.
+# Does not create the service by itself — apply via Render Dashboard or
+# `render blueprints` after a free signup. No card required for the free tier.
+# Default mode is MOCK and must stay clearly labelled unless SANDBOX env vars
+# are injected in the Render dashboard (never commit secrets).
+
+services:
+  - type: web
+    name: paypilot-demo
+    runtime: python
+    plan: free
+    region: frankfurt
+    buildCommand: pip install -e .
+    startCommand: uvicorn paypilot.main:create_app --factory --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    autoDeploy: false
+    envVars:
+      - key: PAYPILOT_PAYPAL_MODE
+        value: mock
+      - key: PAYPILOT_INTENT_PROVIDER
+        value: mock
+      - key: PAYPAL_BASE_URL
+        value: https://api-m.sandbox.paypal.com
+      - key: PAYPILOT_DB
+        value: /tmp/paypilot.sqlite
+      - key: PAYPILOT_RATE_LIMIT_PER_MINUTE
+        value: "60"
+      # Optional SANDBOX (set in dashboard, never in this file):
+      # PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET, then set PAYPILOT_PAYPAL_MODE=sandbox
